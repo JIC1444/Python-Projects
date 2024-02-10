@@ -7,10 +7,10 @@ from sklearn.metrics import accuracy_score
 
 
 #importing test and train data
-imagefile = "/Users/jakecordery/VSCode Projects/NatSci Coding WS/t10k-images.idx3-ubyte"
+imagefile = "t10k-images.idx3-ubyte"
 imagearray = idx2numpy.convert_from_file(imagefile)
 
-labelfile = "/Users/jakecordery/VSCode Projects/NatSci Coding WS/t10k-labels.idx1-ubyte"
+labelfile = "t10k-labels.idx1-ubyte"
 labelarray = idx2numpy.convert_from_file(labelfile)
 
 X_train, X_test, y_train, y_test = train_test_split(imagearray, labelarray, test_size=0.2)
