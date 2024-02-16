@@ -1,4 +1,5 @@
 #ISSUE ValueError: setting an array element with a sequence. The requested array has an inhomogeneous shape after 3 dimensions. The detected shape was (2400, 80, 80) + inhomogeneous part.
+#need to use a picklefile rather than two array for the images and the labels then resize them where the try loop is
 
 import os
 from matplotlib import pyplot as plt
