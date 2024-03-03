@@ -1,10 +1,10 @@
-#Analysing Protein-Protein Interaction Networks with GNNs
+#Analysing Protein-Protein Interaction Networks with KGs and GNNs
 import pandas as pd
 import csv
 import networkx as nx
 import plotly.graph_objects as go
 
-data = pd.read_csv("AstraZeneca GNN Proj/Data/1849171.protein.links.v12.0.txt", 
+data = pd.read_csv("GNN Proj/Data/1849171.protein.links.v12.0.txt", 
                  sep=" ", names = ["protein1" , "protein2", "combined_score"])
 #757118 rows, 3 cols
 
