@@ -67,7 +67,7 @@ layout = go.Layout(
 fig = go.Figure(data=edge_traces + [node_trace, edge_label_trace], layout=layout)
 fig.show()
 
-#implement GNN model architecture
+#implement GNN model architecture using PyTorch - upload to GitHub 05/02/24
 
 
 #train model
