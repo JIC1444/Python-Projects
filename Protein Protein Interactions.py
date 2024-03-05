@@ -197,7 +197,7 @@ def test(model, device):
 for epoch in range(1, epochs):
     model.train()
     pbar = tqdm(total=df_train.size(0))
-    pbar.set_description(f'Epoch {epoch:02d}')
+    pbar.set_description(f"Epoch {epoch:02d}")
     total_loss = total_correct = 0
     for batch in train_loader:
         batch_size = batch.batch_size
