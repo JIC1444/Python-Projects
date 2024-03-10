@@ -165,59 +165,13 @@ class SAGE(torch.nn.Module): #input dim = no of features in KG//out dim = no of 
 
 
 #parameters
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = SAGE(data.x.shape[1], 256, data.num_classes, n_layers=2)#indim = 
-model.to(device)
-epochs = 1 #no of loops though dataset
-optimizer = torch.optim.Adam(model.parameters(), lr=0.03)
-scheduler = ReduceLROnPlateau(optimizer, "max", patience=7)
+
 
 #validates predictions
-def test(model, device):
-    evaluator = Evaluator(name=data)
-    model.eval()
-    out, var = model.inference(total_loader, device)
-    y_true = data.y.cpu()
-    y_pred = out.argmax(dim=-1, keepdim=True)
-    train_acc = evaluator.eval({
-        "y_true": y_true[df_train],
-        "y_pred": y_pred[df_train]
-    })["acc"]
-    val_acc = evaluator.eval({
-        "y_true": y_true[df_validate],
-        "y_pred": y_pred[df_validate]
-    })["acc"]
-    test_acc = evaluator.eval({
-        "y_true": y_true[df_test],
-        "y_pred": y_pred[df_test]
-    })["acc"]
-    return train_acc, val_acc, test_acc, torch.mean(torch.Tensor(var))
+
 
 #train model
-for epoch in range(1, epochs):
-    model.train()
-    pbar = tqdm(total=df_train.size(0))
-    pbar.set_description(f"Epoch {epoch:02d}")
-    total_loss = total_correct = 0
-    for batch in train_loader:
-        batch_size = batch.batch_size
-        optimizer.zero_grad()
-        out, _ = model(batch.x.to(device), batch.edge_index.to(device))
-        out = out[:batch_size]
-        batch_y = batch.y[:batch_size].to(device)
-        batch_y = torch.reshape(batch_y, (-1,))
-        loss = F.nll_loss(out, batch_y)
-        loss.backward()
-        optimizer.step()
-        total_loss += float(loss)
-        total_correct += int(out.argmax(dim=-1).eq(batch_y).sum())
-        pbar.update(batch.batch_size)
-    pbar.close()
-    loss = total_loss / len(train_loader)
-    approx_acc = total_correct / df_train.size(0)
-    train_acc, val_acc, test_acc, var = test(model, device)
-    
-    print(f'Train: {train_acc:.4f}, Val: {val_acc:.4f}, Test: {test_acc:.4f}, Var: {var:.4f}')
+
 
 
 #compare results to existing knowledge
