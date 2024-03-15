@@ -1,5 +1,5 @@
 #Analysing Protein-Protein Interaction Networks with GNNs (ALMOST FINISHED)
-#ERROR WITH DATASET TYPES LINE 154
+#ERROR WITH DATASET TYPES LINE 155
 import pandas as pd
 import csv
 from sklearn.model_selection import train_test_split
@@ -152,8 +152,8 @@ def test():
 times = []
 for epoch in range(1, 51):
     start = time.time()
-    loss = train() #error about str not int here - need to check the dataset
-    val_acc, test_acc = test()
+    loss = train() 
+    val_acc, test_acc = test() #error 'NoneType' object has no attribute 'dim'
     print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}, '
           f'Val: {val_acc:.4f}, Test: {test_acc:.4f}')
     times.append(time.time() - start)
