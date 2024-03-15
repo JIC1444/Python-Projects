@@ -23,7 +23,7 @@ from torch_geometric.nn import GraphSAGE
 from sklearn.metrics import f1_score
 
 
-
+#imports data from STRING website
 data = pd.read_csv("AstraZeneca GNN Proj/Data/1849171.protein.links.v12.0.txt", 
                  sep=" ", names = ["protein1" , "protein2", "combined_score"])
 #757118 rows, 3 cols
@@ -46,9 +46,7 @@ df_validate = pd.DataFrame({"head": df_validate_t["protein1"],
                     "tail": df_validate_t["protein2"]})
 
 
-
-
-#visualise these interactions 
+#visualise these interactions using networkx knowledge graph
 G = nx.Graph()
 for _, row in df_train.iterrows():
   G.add_edge(row["head"], row["tail"], label=row["relation"])
@@ -104,6 +102,9 @@ fig = go.Figure(data=edge_traces + [node_trace, edge_label_trace], layout=layout
 #fig.show() #shows KG in webpage
 
 
+#using torch GCN to find underlying links between the proteins and predict further interactions
+data = from_networkx(G) #networkx graph to torch geometric
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 data = train_dataset.to(device, 'edge_index')
 
@@ -151,7 +152,7 @@ def test():
 times = []
 for epoch in range(1, 51):
     start = time.time()
-    loss = train()
+    loss = train() #error about str not int here - need to check the dataset
     val_acc, test_acc = test()
     print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}, '
           f'Val: {val_acc:.4f}, Test: {test_acc:.4f}')
