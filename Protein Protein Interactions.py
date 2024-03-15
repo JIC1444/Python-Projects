@@ -1,5 +1,5 @@
-#Analysing Protein-Protein Interaction Networks with GNNs (WORK IN PROGRESS)
-#STILL NEED TO ADD DESCRIPTIONS OF ALL OF THE FUNCTIONS - ERROR WITH DATASET TYPES LINE 154
+#Analysing Protein-Protein Interaction Networks with GNNs (ALMOST FINISHED)
+#ERROR WITH DATASET TYPES LINE 154
 import pandas as pd
 import csv
 from sklearn.model_selection import train_test_split
