@@ -1,5 +1,5 @@
 #Analysing Protein-Protein Interaction Networks with GNNs (WORK IN PROGRESS)
-#STILL NEED TO ADD DESCRIPTIONS OF ALL OF THE FUNCTIONS - FIX ERRORS
+#STILL NEED TO ADD DESCRIPTIONS OF ALL OF THE FUNCTIONS - ERROR WITH DATASET TYPES LINE 154
 import pandas as pd
 import csv
 from sklearn.model_selection import train_test_split
@@ -14,6 +14,15 @@ from torch_geometric.loader import NeighborLoader
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch_geometric.nn import MessagePassing, SAGEConv
 from ogb.nodeproppred import Evaluator, PygNodePropPredDataset
+import os.path as osp
+import time
+from sklearn.linear_model import LogisticRegression
+import torch_geometric.transforms as T
+from torch_geometric.loader import LinkNeighborLoader
+from torch_geometric.nn import GraphSAGE
+from sklearn.metrics import f1_score
+
+
 
 data = pd.read_csv("AstraZeneca GNN Proj/Data/1849171.protein.links.v12.0.txt", 
                  sep=" ", names = ["protein1" , "protein2", "combined_score"])
@@ -94,95 +103,58 @@ layout = go.Layout(
 fig = go.Figure(data=edge_traces + [node_trace, edge_label_trace], layout=layout)
 #fig.show() #shows KG in webpage
 
-pyg_graph = from_networkx(G) #converts networkx KG to PyTorch geometric
-pyg_graph.Brand #labels for node stored here
 
-train_loader = NeighborLoader(data, input_nodes=pyg_graph.Brand,
-                              shuffle=True, num_workers=os.cpu_count() - 2,
-                              batch_size=1024, num_neighbors=[30] * 2)
-total_loader = NeighborLoader(data, input_nodes=None, num_neighbors=[-1],
-                               batch_size=4096, shuffle=False,
-                               num_workers=os.cpu_count() - 2)
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+data = train_dataset.to(device, 'edge_index')
 
-#implement GNN model architecture (SAGE layers)
-class SAGE(torch.nn.Module): #input dim = no of features in KG//out dim = no of predictions to make
-    def __init__(self, input_dimension, hidden_dimension, output_dimension, n_layers = 2):
-        super(SAGE, self).__init__()
-        self.n_layers = n_layers
-        self.layers = torch.nn.ModuleList()
-        self.layers_bn = torch.nn.ModuleList()
-    
-        if n_layers == 1:
-            self.layers.append(SAGEConv(input_dimension, output_dimension, normalize=False))
-        elif n_layers == 2: 
-            self.layers.append(SAGEConv(input_dimension, hidden_dimension, normalize=False))
-            self.layers_bn.append(torch.nn.BatchNorm1d(hidden_dimension))
-            self.layers.append(SAGEConv(hidden_dimension, output_dimension, normalize=False))
-        else:
-           self.layers.append(SAGEConv(input_dimension, hidden_dimension, normalize=False))
+model = GraphSAGE(
+    data.num_node_features,
+    hidden_channels=64,
+    num_layers=2,
+).to(device)
 
-        self.layers_bn.append(torch.nn.BatchNorm1d(hidden_dimension))
-        for _ in range(n_layers - 2):
-            self.layers.append(SAGEConv(hidden_dimension, hidden_dimension, normalize=False))
-            self.layers_bn.append(torch.nn.BatchNorm1d(hidden_dimension))
-            self.layers.append(SAGEConv(hidden_dimension, output_dimension, normalize=False))
-
-        for layer in self.layers:
-            layer.reset_parameters()
-
-    def forward(self, x, edge_index): #fn will
-        if len(self.layers) > 1:
-            looper = self.layers[:-1]
-        else:
-            looper = self.layers
-        
-        for i, layer in enumerate(looper):
-            x = layer(x, edge_index)
-            try:
-                x = self.layers_bn[i](x)
-            except Exception as e:
-                abs(1)
-            finally:
-                x = F.relu(x)
-                x = F.dropout(x, p=0.5, training=self.training)
-        
-        if len(self.layers) > 1:
-            x = self.layers[-1](x, edge_index)
-        return F.log_softmax(x, dim=-1), torch.var(x)
-    
-    def inference(self, total_loader, device):
-        xs = []
-        var_ = []
-        for batch in total_loader:
-            out, var = self.forward(batch.x.to(device), batch.edge_index.to(device))
-            out = out[:batch.batch_size]
-            xs.append(out.cpu())
-            var_.append(var.item())
-        
-        out_all = torch.cat(xs, dim=0)
-        
-        return out_all, var_
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
 
-#parameters
+def train():
+    model.train()
+    total_loss = 0
+    for batch in train_loader:
+        batch = batch.to(device)
+        optimizer.zero_grad()
+        h = model(batch.x, batch.edge_index)
+        h_src = h[batch.edge_label_index[0]]
+        h_dst = h[batch.edge_label_index[1]]
+        pred = (h_src * h_dst).sum(dim=-1)
+        loss = F.binary_cross_entropy_with_logits(pred, batch.edge_label)
+        loss.backward()
+        optimizer.step()
+        total_loss += float(loss) * pred.size(0)
+
+    return total_loss / data.num_nodes
 
 
-#validates predictions
+@torch.no_grad()
+def test():
+    model.eval()
+    out = model(data.x, data.edge_index).cpu()
+
+    clf = LogisticRegression()
+    clf.fit(out[data.train_mask], data.y[data.train_mask])
+
+    val_acc = clf.score(out[data.val_mask], data.y[data.val_mask])
+    test_acc = clf.score(out[data.test_mask], data.y[data.test_mask])
+
+    return val_acc, test_acc
 
 
-#train model
-
-
-
-#compare results to existing knowledge
-
-
-
-
-
-#Bibliography: 
-    #Diego Lopez Yse: https://lopezyse.medium.com/make-interactive-knowledge-graphs-with-python-cfe520482197#:~:text=Create%20a%20knowledge%20graph&text=We%20have%20three%20lists%3A%20head,graph%20representation%20of%20the%20relationships.
-    #Tiago Toledo Jr.: https://towardsdatascience.com/how-to-create-a-graph-neural-network-in-python-61fd9b83b54e
-    #Stanford 2019: https://www.youtube.com/watch?v=-UjytpbqX4A
-    #mdr223: https://gist.github.com/mdr223/fcd4063ffa7828eb5e83b584e3a23bb2
+times = []
+for epoch in range(1, 51):
+    start = time.time()
+    loss = train()
+    val_acc, test_acc = test()
+    print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}, '
+          f'Val: {val_acc:.4f}, Test: {test_acc:.4f}')
+    times.append(time.time() - start)
+print(f"Median time per epoch: {torch.tensor(times).median():.4f}s")
 
