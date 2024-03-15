@@ -12,37 +12,10 @@ phylum = pd.read_csv("Figures/XXXXX", sep=" ")
 table = display(phylum) 
 col_names = list(phylum.columns.values) #adds location as a header for the KG
 
-
 phylum_head = []
 phylum_relation = np.array([])
 phylum_tail = []
 locs = [XXXXX] 
-
-#extracting data into suitable format df(3x(95x9)) = df(3x855)
-for u in range(0,94): 
-  for f in range(0,8):
-    phylum_tail.append(locs[f])
-  phylum_head = phylum_head + col_names
-phylum_tail.pop()
-p = []
-for n in range(0,94):
-  for g in col_names:
-    roe = phylum[g][n]
-    print(roe)
-    p.append(roe)
-print(p) 
-
-print("head len",len(phylum_head))
-print("p len", len(p))
-print("tail len",len(phylum_tail))
-
-n = len(phylum_head) - len(p)
-for i in range(0,n):
-  phylum_head.pop()
-N = len(phylum_tail) - len(p)
-for l in range(0,N):
-  phylum_tail.pop()
-
 phylum_graph = pd.DataFrame({"head":phylum16S_head, "relation":p, "tail":phylum16S_tail})
 phylum_graph= phylum_graph[phylum_graph["relation"] != 0] #kills any rows with 0 as relation
 
